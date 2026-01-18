@@ -90,7 +90,27 @@ Anthropic公式のスキル集 [awesome-claude-skills](https://github.com/anthro
 | `video-downloader` | YouTube動画ダウンロード |
 | その他多数 | [リポジトリ](https://github.com/anthropics/awesome-claude-skills)を参照 |
 
-### セットアップ手順
+### セットアップ手順（スクリプト使用）
+
+このリポジトリに含まれるセットアップスクリプトを使用すると、すべてのawesome-claude-skillsを一括でインストールできます。
+
+#### WSL2 / Linux / macOS
+
+```bash
+# ClaudeSkillsリポジトリのセットアップ後に実行
+~/.claude/skills/ClaudeSkills/scripts/setup-awesome-skills.sh
+```
+
+#### Windows (PowerShell 管理者権限)
+
+```powershell
+# ClaudeSkillsリポジトリのセットアップ後に実行
+& "$env:USERPROFILE\.claude\skills\ClaudeSkills\scripts\setup-awesome-skills.ps1"
+```
+
+### セットアップ手順（手動）
+
+個別にスキルを選択してインストールする場合：
 
 #### WSL2 / Linux / macOS
 
@@ -108,23 +128,6 @@ ln -s awesome-claude-skills/changelog-generator changelog-generator
 ln -s awesome-claude-skills/skill-creator skill-creator
 ln -s awesome-claude-skills/video-downloader video-downloader
 # 必要なスキルを追加...
-```
-
-#### 一括セットアップスクリプト
-
-すべてのスキルを一括でリンクする場合：
-
-```bash
-cd ~/.claude/skills
-
-# リポジトリをクローン（未クローンの場合）
-[ ! -d "awesome-claude-skills" ] && git clone https://github.com/anthropics/awesome-claude-skills.git
-
-# 全スキルのシンボリックリンクを作成
-for skill in awesome-claude-skills/*/; do
-  skill_name=$(basename "$skill")
-  [ ! -e "$skill_name" ] && ln -s "awesome-claude-skills/$skill_name" "$skill_name"
-done
 ```
 
 #### Windows (PowerShell 管理者権限)
