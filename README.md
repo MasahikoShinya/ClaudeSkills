@@ -76,7 +76,7 @@ git pull origin main
 
 ## awesome-claude-skills の設定
 
-Anthropic公式のスキル集 [awesome-claude-skills](https://github.com/anthropics/awesome-claude-skills) も併せて設定することを推奨します。
+コミュニティのスキル集 [awesome-claude-skills](https://github.com/ComposioHQ/awesome-claude-skills) も併せて設定することを推奨します。
 
 ### 含まれる主なスキル
 
@@ -88,7 +88,7 @@ Anthropic公式のスキル集 [awesome-claude-skills](https://github.com/anthro
 | `changelog-generator` | 変更履歴自動生成 |
 | `skill-creator` | 新規スキル作成ガイド |
 | `video-downloader` | YouTube動画ダウンロード |
-| その他多数 | [リポジトリ](https://github.com/anthropics/awesome-claude-skills)を参照 |
+| その他多数 | [リポジトリ](https://github.com/ComposioHQ/awesome-claude-skills)を参照 |
 
 ### セットアップ手順（スクリプト使用）
 
@@ -118,7 +118,7 @@ Anthropic公式のスキル集 [awesome-claude-skills](https://github.com/anthro
 cd ~/.claude/skills
 
 # リポジトリをクローン
-git clone https://github.com/anthropics/awesome-claude-skills.git
+git clone https://github.com/ComposioHQ/awesome-claude-skills.git
 
 # 使用したいスキルのシンボリックリンクを作成
 ln -s awesome-claude-skills/artifacts-builder artifacts-builder
@@ -136,7 +136,7 @@ ln -s awesome-claude-skills/video-downloader video-downloader
 Set-Location "$env:USERPROFILE\.claude\skills"
 
 # リポジトリをクローン
-git clone https://github.com/anthropics/awesome-claude-skills.git
+git clone https://github.com/ComposioHQ/awesome-claude-skills.git
 
 # 使用したいスキルのシンボリックリンクを作成
 New-Item -ItemType SymbolicLink -Path "artifacts-builder" -Target "awesome-claude-skills\artifacts-builder"

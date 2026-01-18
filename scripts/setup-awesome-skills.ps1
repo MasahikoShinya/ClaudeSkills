@@ -7,7 +7,7 @@
 $ErrorActionPreference = "Stop"
 
 $SkillsDir = "$env:USERPROFILE\.claude\skills"
-$AwesomeRepo = "https://github.com/anthropics/awesome-claude-skills.git"
+$AwesomeRepo = "https://github.com/ComposioHQ/awesome-claude-skills.git"
 $AwesomeDir = "$SkillsDir\awesome-claude-skills"
 
 Write-Host "=== awesome-claude-skills セットアップ ===" -ForegroundColor Cyan

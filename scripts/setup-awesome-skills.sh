@@ -7,7 +7,7 @@
 set -e
 
 SKILLS_DIR="${HOME}/.claude/skills"
-AWESOME_REPO="https://github.com/anthropics/awesome-claude-skills.git"
+AWESOME_REPO="https://github.com/ComposioHQ/awesome-claude-skills.git"
 AWESOME_DIR="${SKILLS_DIR}/awesome-claude-skills"
 
 echo "=== awesome-claude-skills セットアップ ==="
