@@ -7,6 +7,7 @@ Claude Code用のカスタムスキル集。
 | スキル名 | 説明 |
 |----------|------|
 | `test-orchestrator` | テスト計画・Unit/E2Eテストの実行を統合管理するオーケストレーター |
+| `serena-memory-manager` | Serenaメモリを活用したセッション継続性管理・クラッシュ復帰支援 |
 
 ## セットアップ
 
@@ -178,6 +179,33 @@ User: テスト計画を作成して
 ```
 
 詳細は [test-orchestrator/SKILL.md](./test-orchestrator/SKILL.md) を参照。
+
+### serena-memory-manager
+
+Serenaメモリを活用して、セッション間の継続性を確保し、突然の中断からも簡単に復帰できるようにするスキル。
+
+**機能:**
+- セッション状態の自動保存・復元
+- プロジェクト全体の状態管理
+- チェックポイント作成によるクラッシュ復帰
+- ハイブリッド方式（常時更新 + スナップショット）
+
+**管理するメモリ:**
+| メモリ | 用途 |
+|--------|------|
+| `session-current` | 現在のセッション状態（常時更新） |
+| `project-status` | プロジェクト全体の情報（長期保持） |
+| `checkpoint-*` | スナップショット（履歴） |
+
+**使用例:**
+```
+User: 本日の作業を開始します
+User: 前回の続きから
+User: 作業終了
+User: チェックポイントを作成して
+```
+
+詳細は [serena-memory-manager/SKILL.md](./serena-memory-manager/SKILL.md) を参照。
 
 ## ライセンス
 
