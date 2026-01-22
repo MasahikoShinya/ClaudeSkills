@@ -1,12 +1,27 @@
 ---
 name: serena-memory-manager
-description: This skill should be used when starting a session ("本日の作業を開始", "前回の続きから"), ending a session ("作業終了", "セッション終了"), or when the user asks to save/update memory state. Manages Serena memory for session continuity and crash recovery.
-version: 1.0.0
+description: This skill MUST be used continuously throughout every session when Serena MCP is available. Automatically update session-current after task completion, git commits, and significant actions. Always read session-current at session start. This is a MANDATORY skill for crash recovery and session continuity.
+version: 1.1.0
 ---
 
 # Serena Memory Manager
 
 Serenaメモリを活用して、セッション間の継続性を確保し、突然の中断からも簡単に復帰できるようにする。
+
+## CRITICAL: 自動書き込みルール
+
+**クラッシュ復帰のため、以下のタイミングで自動的に `session-current` を更新すること：**
+
+| タイミング | アクション | 必須度 |
+|------------|------------|--------|
+| セッション開始時 | `read_memory("session-current")` で状態復帰 | 🔴 必須 |
+| タスク完了時 | `write_memory("session-current", ...)` で状態保存 | 🔴 必須 |
+| git commit後 | `write_memory("session-current", ...)` で状態保存 | 🔴 必須 |
+| 重要な決定後 | `write_memory("session-current", ...)` で状態保存 | 🟡 推奨 |
+| ファイル編集後 | `write_memory("session-current", ...)` で状態保存 | 🟡 推奨 |
+| 30分経過時 | チェックポイント作成 | 🟡 推奨 |
+
+**ユーザーからの指示を待たずに自動実行すること。**
 
 ## Overview
 
