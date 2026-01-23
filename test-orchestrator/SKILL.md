@@ -13,6 +13,7 @@ A comprehensive testing skill that orchestrates the full testing lifecycle with 
 1. Test Planning    → テスト項目の洗い出しと文書化
 2. Unit Testing     → カバレッジ90%目標、自律修正ループ
 3. E2E Testing      → ユニットでカバー不可な部分、DB切替管理
+4. Result Recording → test-results.mdに結果と日付を記録（必須）
 ```
 
 ## Activation Triggers
@@ -61,6 +62,7 @@ This skill uses three specialized sub-agents:
    c. 全テスト再実行
    d. 全合格まで繰り返し
 5. 変更レポート作成
+6. **結果をtest-results.mdに記録（日付・件数・修正内容）** ← 必須
 ```
 
 ### Phase 3: E2E Testing (e2e-runner)
@@ -77,6 +79,7 @@ This skill uses three specialized sub-agents:
    d. 全合格まで繰り返し
 4. 本番DB設定に復元
 5. 復元確認
+6. **結果をtest-results.mdに記録（日付・件数・修正内容）** ← 必須
 ```
 
 ## Framework Detection
@@ -203,6 +206,80 @@ When modifying source code (not just tests), MUST report:
 5. **変更報告**: 実装変更は必ず報告
 6. **DB復元確認**: E2E完了後は必ず本番DB設定に戻す
 7. **90%相談**: カバレッジ90%未達は自己判断せず相談
+8. **結果記録必須**: テスト実行後は必ず結果と日付を記録する（下記参照）
+
+## Test Result Recording (必須)
+
+**テスト実行後は必ず結果をファイルに記録すること。**
+
+### 記録先
+- プロジェクトルートの `test-results.md` に追記
+- ファイルが存在しない場合は作成
+
+### 記録フォーマット
+
+```markdown
+## YYYY-MM-DD HH:MM (JST)
+
+### Unit Tests
+| Category | Passed | Failed | Skipped | Total |
+|----------|--------|--------|---------|-------|
+| Frontend | X | X | X | X |
+| Backend  | X | X | X | X |
+
+### E2E Tests
+| Passed | Failed | Skipped | Total |
+|--------|--------|---------|-------|
+| X | X | X | X |
+
+### Summary
+- ✅ All tests passed / ❌ X failures detected
+- Coverage: Frontend XX%, Backend XX%
+
+### Fixes Applied (if any)
+- `file.ts:line` - 修正内容
+
+### Notes
+- 特記事項があれば記載
+
+---
+```
+
+### Recording Timing
+1. **ユニットテスト完了時**: Frontend/Backendそれぞれの結果を記録
+2. **E2Eテスト完了時**: E2E結果を記録
+3. **修正適用後の再実行時**: 再実行結果を更新
+
+### Example Entry
+
+```markdown
+## 2026-01-23 12:30 (JST)
+
+### Unit Tests
+| Category | Passed | Failed | Skipped | Total |
+|----------|--------|--------|---------|-------|
+| Frontend | 1503 | 0 | 0 | 1503 |
+| Backend  | 745 | 0 | 126 | 871 |
+
+### E2E Tests
+| Passed | Failed | Skipped | Total |
+|--------|--------|---------|-------|
+| 317 | 0 | 9 | 326 |
+
+### Summary
+- ✅ All tests passed
+- Coverage: Frontend 85%, Backend 78%
+
+### Fixes Applied
+- `frontend/app/tests/unit/lib/hls-player.test.ts` - vi.hoisted()でモック修正
+- `frontend/app/tests/unit/Console.test.tsx` - ページネーション形式対応
+
+### Notes
+- Backend skipped tests are eKYC related (expected)
+- E2E skipped tests are environment-specific
+
+---
+```
 
 ## Container Execution Policy
 
