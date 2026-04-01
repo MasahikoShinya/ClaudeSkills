@@ -182,7 +182,22 @@ test.describe('シナリオ名', () => {
 3. テスト実行（Playwright）
 4. スクリーンショットディレクトリの整理
 5. HTMLプレイヤーの生成
-6. 素材一覧をメインコンテキストに返す
+6. **プレイヤーをブラウザで自動オープン**（`open` コマンドで player.html を開く）
+7. 素材一覧をメインコンテキストに返す
+
+### Step 6: 自動オープン（必須）
+
+テスト完了・プレイヤー生成後、必ずブラウザで開く:
+
+```bash
+# macOS
+open <test-results>/player.html
+
+# Linux
+xdg-open <test-results>/player.html
+```
+
+ユーザーがすぐに目視確認を開始できるようにするため、このステップは省略しない。
 
 ## Tips
 
