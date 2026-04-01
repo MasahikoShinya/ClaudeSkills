@@ -1,3 +1,9 @@
+---
+name: e2e-runner
+description: E2Eテストの実行・DB環境管理・自律修正を行うサブエージェント。test-orchestratorスキルから呼ばれる。
+model: sonnet
+---
+
 # E2E Runner Sub-Agent
 
 E2Eテストの実行とDB環境管理を担当するサブエージェント。

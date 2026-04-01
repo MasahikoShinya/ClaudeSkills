@@ -1,3 +1,9 @@
+---
+name: test-planner
+description: テスト項目の洗い出しとUnit/E2E振り分けを行うサブエージェント。test-orchestratorスキルから呼ばれる。
+model: sonnet
+---
+
 # Test Planner Sub-Agent
 
 テスト項目の洗い出しと文書化を担当するサブエージェント。

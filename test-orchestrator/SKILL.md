@@ -1,47 +1,59 @@
 ---
 name: test-orchestrator
-description: Comprehensive test orchestration skill that manages test planning, unit tests, and E2E tests with coverage targets and autonomous fix loops
+description: テストの計画・実行・目視確認を統合管理する司令塔スキル。サブエージェント（test-planner, unit-runner, e2e-runner, e2e-visual-verify）をAgent toolで呼び出す。
 ---
 
 # Test Orchestrator
 
-A comprehensive testing skill that orchestrates the full testing lifecycle with sub-agents for planning, unit testing, and E2E testing.
+テストライフサイクル全体を統合管理する司令塔スキル。
+実際の作業は `~/.claude/agents/` に配置されたサブエージェントに委譲し、メインコンテキストでは結果の集約と報告のみ行う。
 
 ## Workflow Overview
 
 ```
-1. Test Planning    → テスト項目の洗い出しと文書化
-2. Unit Testing     → カバレッジ90%目標、自律修正ループ
-3. E2E Testing      → ユニットでカバー不可な部分、DB切替管理
-4. Result Recording → test-results.mdに結果と日付を記録（必須）
+1. Test Planning      → test-planner エージェントで計画作成
+2. Unit Testing       → unit-runner エージェントで実行・修正
+3. E2E Testing        → e2e-runner エージェントで実行・修正
+4. Visual Verify      → e2e-visual-verify エージェントで動画・スクショ生成
+5. Result Recording   → test-results.mdに結果と日付を記録（必須）
 ```
 
 ## Activation Triggers
 
 - User requests test execution, test planning, or test coverage improvement
-- Keywords: "テスト", "test", "coverage", "カバレッジ", "ユニットテスト", "E2E"
+- Keywords: "テスト", "test", "coverage", "カバレッジ", "ユニットテスト", "E2E", "動作確認"
 
-## Sub-Agents
+## Sub-Agents（~/.claude/agents/ に配置）
 
-This skill uses three specialized sub-agents:
+各サブエージェントはAgent toolで**隔離コンテキスト**で実行される。結果のサマリーだけがメインコンテキストに返る。
 
 ### 1. test-planner
 - **Purpose**: テスト項目の洗い出しとUnit/E2E振り分け
 - **Output**: `test-plan.md` (テスト項目文書)
+- **呼び出し**: `Agent tool → subagent: test-planner`
 
 ### 2. unit-runner
 - **Purpose**: ユニットテストの実行と自律的修正
 - **Target**: カバレッジ90%
 - **Constraint**: 本番DB禁止、モック必須
+- **呼び出し**: `Agent tool → subagent: unit-runner`
 
 ### 3. e2e-runner
 - **Purpose**: E2Eテストの実行とDB管理
 - **Target**: ユニットでカバー不可な部分
 - **Constraint**: テスト用DB使用、完了後に復元
+- **呼び出し**: `Agent tool → subagent: e2e-runner`
+
+### 4. e2e-visual-verify
+- **Purpose**: E2Eテストの動画録画・スクリーンショット・目視確認素材の生成
+- **Output**: 動画パス、スクショパス、HTMLプレイヤー、確認チェックリスト
+- **呼び出し**: `Agent tool → subagent: e2e-visual-verify`
 
 ## Execution Protocol
 
 ### Phase 1: Planning (test-planner)
+
+Agent toolでtest-plannerサブエージェントを呼び出す:
 
 ```markdown
 1. 対象コード/機能を分析
@@ -51,6 +63,8 @@ This skill uses three specialized sub-agents:
 ```
 
 ### Phase 2: Unit Testing (unit-runner)
+
+Agent toolでunit-runnerサブエージェントを呼び出す:
 
 ```markdown
 1. テストフレームワーク検出 (Vitest/Jest or pytest)
@@ -67,6 +81,8 @@ This skill uses three specialized sub-agents:
 
 ### Phase 3: E2E Testing (e2e-runner)
 
+Agent toolでe2e-runnerサブエージェントを呼び出す:
+
 ```markdown
 1. テスト用DB環境を構築
    - 環境変数でDB切替
@@ -81,6 +97,20 @@ This skill uses three specialized sub-agents:
 5. 復元確認
 6. **結果をtest-results.mdに記録（日付・件数・修正内容）** ← 必須
 ```
+
+### Phase 4: Visual Verify (e2e-visual-verify)
+
+Agent toolでe2e-visual-verifyサブエージェントを呼び出す:
+
+```markdown
+1. demo-utils.ts の存在確認・配置
+2. テストファイルに動画録画設定を組み込み
+3. テスト実行（動画・スクショ付き）
+4. HTMLビデオプレイヤー生成
+5. 目視確認素材一覧をメインコンテキストに返す
+```
+
+**Phase 4はオプション。** ユーザーが「動作確認」「動画」「目視」と言った場合に実行する。
 
 ## Framework Detection
 

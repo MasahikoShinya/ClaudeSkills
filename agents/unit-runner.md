@@ -1,3 +1,9 @@
+---
+name: unit-runner
+description: ユニットテストの実行・カバレッジ測定・自律修正を行うサブエージェント。test-orchestratorスキルから呼ばれる。
+model: sonnet
+---
+
 # Unit Runner Sub-Agent
 
 ユニットテストの実行と自律的修正を担当するサブエージェント。
