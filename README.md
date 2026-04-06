@@ -56,6 +56,7 @@ code-review（スキル・メインコンテキスト）
 
 - Claude Code がインストールされていること
 - Git がインストールされていること
+- code-review スキルを使用する場合: Codex MCP サーバーが設定されていること（[codex-mcp](https://github.com/nicobailon/codex-mcp) 等）
 
 ### WSL2 / Linux / macOS
 
