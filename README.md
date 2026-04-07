@@ -202,6 +202,45 @@ User: セキュリティ観点でレビューして
 
 ---
 
+## 変更履歴
+
+### 2026-04-07
+
+- **e2e-visual-verify**: 動画冒頭に検証項目一覧（□）、末尾にpass/fail結果（✅/❌）を表示するオーバーレイ機能を追加
+- **e2e-visual-verify**: スクリーンショットをシナリオ名でディレクトリ分けして紐づけ
+- **e2e-visual-verify**: プレイヤーをサイドバー廃止→動画下にシナリオ一覧+スクリーンショット表示に変更
+- **e2e-visual-verify**: オーバーレイのデザインをplayer.htmlと統一
+
+### 2026-04-06
+
+- **code-review v1.0.0**: Claude Opus + Codex による独立レビュー・クロスレスポンス・統合レポート生成スキルを追加
+- **code-reviewer / code-critic**: code-review用サブエージェントを追加
+- 廃止スキル（response-workflow, serena-memory-manager, error-reporting-format）を削除
+- README整理 — 廃止スキル削除、コミュニティスキルをオプション化
+
+### 2026-04-05
+
+- **e2e-visual-verify**: テスト完了後にプレイヤーを自動でブラウザオープンする機能を追加
+- **error-reporting-format**: サブエージェントに統合、スキル廃止
+
+### 2026-04-04
+
+- サブエージェントを `~/.claude/agents/` 対応に分離
+- README更新 — サブエージェント構成とセットアップ手順を追加
+
+### 2026-04-03
+
+- **response-workflow v1.2.0**: 入力分解、TDD、デグレ対策を追加
+- **response-workflow v1.0.0**: スキル追加
+- **error-reporting-format**: スキル追加
+- **serena-memory-manager**: スキル追加
+- **test-orchestrator v1.1.0**: 更新
+
+### 初回リリース
+
+- **test-orchestrator v1.0.0**: テスト計画・実行・目視確認の司令塔スキルを追加
+- コミュニティスキル（awesome-claude-skills）のセットアップスクリプトを追加
+
 ## ライセンス
 
 MIT License
