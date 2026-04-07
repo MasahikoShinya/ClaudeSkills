@@ -109,7 +109,7 @@ export async function showTestPlan(
         overlay.id = 'pw-test-plan';
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 100000;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            background: #0f0f23;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-family: 'Segoe UI', sans-serif; color: #e0e0e0;
             animation: pw-fade-in 0.5s ease;
@@ -136,8 +136,8 @@ export async function showTestPlan(
         items.forEach((item, i) => {
             const li = document.createElement('li');
             li.style.cssText = `
-                padding: 12px 20px; margin-bottom: 8px; border-radius: 8px;
-                background: rgba(255,255,255,0.05); border-left: 3px solid #e94560;
+                padding: 10px 12px; margin-bottom: 4px; border-radius: 6px;
+                background: #1a1a2e; border-left: 3px solid #e94560;
                 font-size: 16px; display: flex; align-items: center; gap: 12px;
             `;
             const num = document.createElement('span');
@@ -179,7 +179,7 @@ export async function showTestResults(
         overlay.id = 'pw-test-results';
         overlay.style.cssText = `
             position: fixed; inset: 0; z-index: 100000;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            background: #0f0f23;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             font-family: 'Segoe UI', sans-serif; color: #e0e0e0;
             animation: pw-fade-in 0.5s ease;
@@ -197,8 +197,8 @@ export async function showTestResults(
         summary.textContent = allPassed ? `ALL PASSED (${total}/${total})` : `${passCount}/${total} PASSED`;
         summary.style.cssText = `
             font-size: 20px; font-weight: 700; margin-bottom: 28px; padding: 8px 24px;
-            border-radius: 8px;
-            background: ${allPassed ? 'rgba(0,200,100,0.15)' : 'rgba(233,69,96,0.15)'};
+            border-radius: 6px;
+            background: ${allPassed ? '#1a2e1a' : '#2e1a1a'};
             color: ${allPassed ? '#00c864' : '#e94560'};
         `;
         overlay.appendChild(summary);
@@ -209,8 +209,8 @@ export async function showTestResults(
             const row = document.createElement('div');
             row.style.cssText = `
                 display: flex; align-items: center; gap: 12px;
-                padding: 10px 16px; margin-bottom: 6px; border-radius: 8px;
-                background: rgba(255,255,255,0.04);
+                padding: 10px 12px; margin-bottom: 4px; border-radius: 6px;
+                background: #1a1a2e;
                 border-left: 3px solid ${r.passed ? '#00c864' : '#e94560'};
             `;
             const icon = document.createElement('span');
