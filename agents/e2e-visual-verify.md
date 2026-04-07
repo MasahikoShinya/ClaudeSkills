@@ -121,14 +121,14 @@ export async function showTestPlan(
         `;
         document.head.appendChild(style);
 
-        const heading = document.createElement('h1');
+        const heading = document.createElement('h2');
         heading.textContent = title;
-        heading.style.cssText = 'font-size: 32px; margin-bottom: 32px; color: #e94560; font-weight: 700;';
+        heading.style.cssText = 'font-size: 24px; margin-bottom: 24px; color: #888; text-transform: uppercase; letter-spacing: 1px;';
         overlay.appendChild(heading);
 
         const label = document.createElement('div');
         label.textContent = '確認項目';
-        label.style.cssText = 'font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;';
+        label.style.cssText = 'font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px;';
         overlay.appendChild(label);
 
         const list = document.createElement('ol');
@@ -185,9 +185,9 @@ export async function showTestResults(
             animation: pw-fade-in 0.5s ease;
         `;
 
-        const heading = document.createElement('h1');
+        const heading = document.createElement('h2');
         heading.textContent = title;
-        heading.style.cssText = 'font-size: 28px; margin-bottom: 12px; color: #e94560; font-weight: 700;';
+        heading.style.cssText = 'font-size: 24px; margin-bottom: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;';
         overlay.appendChild(heading);
 
         const passCount = results.filter(r => r.passed).length;
