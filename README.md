@@ -206,10 +206,9 @@ User: セキュリティ観点でレビューして
 
 ### 2026-04-07
 
-- **e2e-visual-verify**: 動画冒頭に検証項目一覧（□）、末尾にpass/fail結果（✅/❌）を表示するオーバーレイ機能を追加
+- **e2e-visual-verify**: エージェント定義を実装済みコード（showTitle/showResult）に統一
 - **e2e-visual-verify**: スクリーンショットをシナリオ名でディレクトリ分けして紐づけ
 - **e2e-visual-verify**: プレイヤーをサイドバー廃止→動画下にシナリオ一覧+スクリーンショット表示に変更
-- **e2e-visual-verify**: オーバーレイのデザインをplayer.htmlと統一
 
 ### 2026-04-06
 
