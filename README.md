@@ -204,6 +204,10 @@ User: セキュリティ観点でレビューして
 
 ## 変更履歴
 
+### 2026-04-08
+
+- **e2e-visual-verify**: プレイヤー生成を固定スクリプト（`scripts/generate-player.ts`）に変更。毎回同一デザインのHTMLを出力
+
 ### 2026-04-07
 
 - **e2e-visual-verify**: エージェント定義を実装済みコード（showTitle/showResult）に統一
