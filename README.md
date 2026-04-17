@@ -130,6 +130,40 @@ New-Item -ItemType SymbolicLink -Path "code-reviewer.md" -Target "..\skills\Clau
 New-Item -ItemType SymbolicLink -Path "code-critic.md" -Target "..\skills\ClaudeSkills\agents\code-critic.md"
 ```
 
+### Claude Code にセットアップを任せる
+
+別 PC・新規環境への展開、または単一スキル追加時は、以下のプロンプトを Claude Code に渡せば clone / symlink / 実行権限付与まで自動で処理できる。OS 判定もするので、macOS・Linux・WSL・Windows のどれでもそのまま使える。
+
+**macOS / Linux / WSL の場合:**
+
+```
+https://github.com/MasahikoShinya/ClaudeSkills.git リポジトリの cowork-chrome-launcher スキルを、Claude Code / Cowork から使えるようにセットアップしてほしい。
+
+やること：
+1. リポジトリが未クローンなら ~/.claude/skills/ にクローン、既にあれば git pull で最新化
+2. ~/.claude/skills/cowork-chrome-launcher というシンボリックリンクを作成し、(clone 先)/cowork-chrome-launcher を指すようにする（既存ならスキップ）
+3. open-cowork-chrome.command に実行権限が無ければ chmod +x で付与
+4. 結果をまとめて報告（リンク先・権限・確認コマンド）
+
+完了したら最後に「Claude デスクトップアプリを再起動 → 新規セッションで試せ」と念押ししてほしい。
+```
+
+**Windows (PowerShell) の場合:**
+
+```
+https://github.com/MasahikoShinya/ClaudeSkills.git リポジトリの cowork-chrome-launcher スキルを、Cowork から使えるようにセットアップしてほしい。
+
+やること：
+1. リポジトリが未クローンなら %USERPROFILE%\.claude\skills\ にクローン、既にあれば git pull で最新化
+2. %USERPROFILE%\.claude\skills\cowork-chrome-launcher という NTFS シンボリックリンクを作成し、(clone 先)\cowork-chrome-launcher を指すようにする（既存ならスキップ）
+3. リンク作成に管理者権限または開発者モード ON が必要なら、先に案内する
+4. 結果をまとめて報告（リンク先・確認コマンド）
+
+完了したら最後に「Claude デスクトップアプリを再起動 → 新規セッションで試せ」と念押ししてほしい。
+```
+
+他スキルを追加する時も、`cowork-chrome-launcher` 部分をスキル名に差し替えれば同じ形で使える。
+
 ## セットアップの確認
 
 ```bash
