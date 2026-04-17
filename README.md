@@ -12,6 +12,7 @@ Claude Code用のカスタムスキル・サブエージェント集。
 |----------|------------|------|
 | `test-orchestrator` | v1.1.0 | テスト計画・実行・目視確認を統合管理する司令塔（サブエージェントを呼び出す） |
 | `code-review` | v1.0.0 | Claude Opus + Codex による独立レビュー・クロスレスポンス・統合レポート生成 |
+| `cowork-chrome-launcher` | v1.0.0 | Cowork の Chrome 操作前に専用プロファイルの接続を確認し、未接続なら起動スクリプトで誘導する運用スキル（Mac/Windows 両対応） |
 
 ### サブエージェント（`~/.claude/agents/` に配置）
 
@@ -58,6 +59,26 @@ code-review（スキル・メインコンテキスト）
 - Git がインストールされていること
 - code-review スキルを使用する場合: Codex MCP サーバーが設定されていること（[codex-mcp](https://github.com/nicobailon/codex-mcp) 等）
 
+### 複数環境で併用する場合の注意（WSL + Windows Cowork など）
+
+Claude Code（WSL / Linux / macOS）と Cowork（macOS / Windows）は**スキルを読み込む場所が環境ごとに独立**している。
+
+- Claude Code in WSL → WSL 側の `~/.claude/skills/`
+- Cowork on Windows → Windows ネイティブの `%USERPROFILE%\.claude\skills\`
+- Cowork on macOS / Claude Code on macOS → macOS 側の `~/.claude/skills/`
+
+同一マシン上で WSL Claude Code と Windows Cowork を併用する場合、**理論上は Windows 側の symlink を `\\wsl.localhost\Ubuntu\...` 経由で WSL 内のリポジトリに向ける**ことも可能だが、Cowork が UNC パス越しにスキルファイルを確実に読めるかは環境依存で保証できない。
+
+**確実に動かすには、WSL と Windows でそれぞれ独立に clone して symlink を張る**（このリポジトリを2箇所に clone する）のが推奨。各環境は完全に独立しているため、互いに干渉しない。更新時はそれぞれの環境で `git pull` を叩く。
+
+```
+例：Windows + WSL 併用時の配置
+├── C:\Users\<user>\.claude\skills\ClaudeSkills\        ← Cowork on Windows 用（Windows 側でclone）
+└── \\wsl$\Ubuntu\home\<user>\.claude\skills\ClaudeSkills\  ← Claude Code in WSL 用（WSL 側でclone）
+```
+
+Mac / Linux のみ、もしくは Windows のみの環境であれば、単一 clone で完結する。
+
 ### WSL2 / Linux / macOS
 
 ```bash
@@ -71,6 +92,7 @@ git clone https://github.com/MasahikoShinya/ClaudeSkills.git
 # スキルのシンボリックリンクを作成
 ln -s ClaudeSkills/test-orchestrator test-orchestrator
 ln -s ClaudeSkills/code-review code-review
+ln -s ClaudeSkills/cowork-chrome-launcher cowork-chrome-launcher
 
 # サブエージェントのシンボリックリンクを作成
 cd ~/.claude/agents
@@ -96,6 +118,7 @@ git clone https://github.com/MasahikoShinya/ClaudeSkills.git
 # スキルのシンボリックリンク
 New-Item -ItemType SymbolicLink -Path "test-orchestrator" -Target "ClaudeSkills\test-orchestrator"
 New-Item -ItemType SymbolicLink -Path "code-review" -Target "ClaudeSkills\code-review"
+New-Item -ItemType SymbolicLink -Path "cowork-chrome-launcher" -Target "ClaudeSkills\cowork-chrome-launcher"
 
 # サブエージェントのシンボリックリンク
 Set-Location "$env:USERPROFILE\.claude\agents"
@@ -111,7 +134,7 @@ New-Item -ItemType SymbolicLink -Path "code-critic.md" -Target "..\skills\Claude
 
 ```bash
 # スキル
-ls -la ~/.claude/skills/ | grep -E "(test-orchestrator|code-review)"
+ls -la ~/.claude/skills/ | grep -E "(test-orchestrator|code-review|cowork-chrome-launcher)"
 
 # サブエージェント
 ls -la ~/.claude/agents/
@@ -120,6 +143,7 @@ ls -la ~/.claude/agents/
 # ~/.claude/skills/
 #   test-orchestrator -> ClaudeSkills/test-orchestrator
 #   code-review -> ClaudeSkills/code-review
+#   cowork-chrome-launcher -> ClaudeSkills/cowork-chrome-launcher
 #
 # ~/.claude/agents/
 #   test-planner.md -> .../ClaudeSkills/agents/test-planner.md
@@ -133,9 +157,18 @@ ls -la ~/.claude/agents/
 ## 更新
 
 ```bash
+# WSL / Linux / macOS
 cd ~/.claude/skills/ClaudeSkills
 git pull origin main
 ```
+
+```powershell
+# Windows
+cd $env:USERPROFILE\.claude\skills\ClaudeSkills
+git pull origin main
+```
+
+WSL と Windows Cowork を併用している場合は**両方の clone で** `git pull` が必要（それぞれが独立した作業コピー）。
 
 ## コミュニティスキル（オプション）
 
@@ -202,7 +235,40 @@ User: セキュリティ観点でレビューして
 
 ---
 
+### cowork-chrome-launcher (v1.0.0)
+
+Cowork の Chrome 操作前に Cowork 専用 Chrome プロファイルの接続状態を確認し、未接続なら同梱スクリプトで起動するようユーザーを誘導する運用スキル。Chrome Sync によるクロスデバイス誤接続、Cowork プロファイルが閉じている状態での接続失敗、拡張サービスワーカーの切断など、Cowork の Chrome 制御で頻発するパターンを検知して回避する。
+
+**同梱物:**
+| 内容 | 説明 |
+|------|------|
+| `scripts/open-cowork-chrome.command` | Mac 用起動スクリプト（Cowork プロファイルで Chrome を起動） |
+| `scripts/open-cowork-chrome.bat` | Windows 用起動スクリプト（同上） |
+| `references/setup.md` | Cowork 専用プロファイルの作成、拡張のインストール、自動起動設定の手順書 |
+
+**使用例:**
+```
+User: Chrome で Yahoo を開いて
+User: このサイトのスクショを撮って
+User: ウェブページの内容を要約して
+User: Cowork で Chrome が動かないんだけど
+User: Cowork プロファイルってどう作るの？
+```
+
+**前提条件:**
+- Cowork 専用の Chrome プロファイル（Google アカウント未ログイン）が作成済み
+- そのプロファイルに `Claude for Chrome` 拡張がインストール済み
+- セットアップ未完了の場合は `references/setup.md` を参照
+
+詳細は [cowork-chrome-launcher/SKILL.md](./cowork-chrome-launcher/SKILL.md) を参照。
+
+---
+
 ## 変更履歴
+
+### 2026-04-16
+
+- **cowork-chrome-launcher v1.0.0**: Cowork の Chrome 操作前にプロファイル接続を確認・誘導する運用スキルを追加
 
 ### 2026-04-08
 

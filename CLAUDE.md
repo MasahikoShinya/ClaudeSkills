@@ -32,6 +32,7 @@ code-review（スキル・メインコンテキスト）
 
 - **test-orchestrator** — テストライフサイクルの司令塔。実作業はサブエージェントに委譲し、メインコンテキストでは結果集約と報告のみ行う。
 - **code-review** — Claude Opus + Codex による独立レビュー・クロスレスポンス・統合レポート生成。矛盾する指摘はAIが裁定せず人間に委ねる。Codex MCP が必要。
+- **cowork-chrome-launcher** — Cowork の Chrome 操作前に専用プロファイルの接続を確認し、未接続なら Mac/Windows 両対応の起動スクリプトで誘導する運用スキル。サブエージェントは持たず、`mcp__Claude_in_Chrome__tabs_context_mcp` の応答を見て接続状態を判別する。
 
 ### Sub-Agents (`agents/` → `~/.claude/agents/` にリンク)
 
