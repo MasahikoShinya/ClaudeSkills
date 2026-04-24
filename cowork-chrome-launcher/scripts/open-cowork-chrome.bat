@@ -24,7 +24,7 @@ if not exist "%LOCAL_STATE%" (
 )
 
 set "PROFILE_DIR="
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "try { (Get-Content -LiteralPath $env:LOCAL_STATE -Raw | ConvertFrom-Json).profile.info_cache.PSObject.Properties ^| Where-Object { $_.Value.name -eq $env:PROFILE_NAME } ^| Select-Object -ExpandProperty Name -First 1 } catch { }"`) do set "PROFILE_DIR=%%i"
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -Command "try { $target = $env:PROFILE_NAME.Trim().ToLower(); (Get-Content -LiteralPath $env:LOCAL_STATE -Raw | ConvertFrom-Json).profile.info_cache.PSObject.Properties ^| Where-Object { ($_.Value.name ?? '').Trim().ToLower() -eq $target } ^| Select-Object -ExpandProperty Name -First 1 } catch { }"`) do set "PROFILE_DIR=%%i"
 
 if "%PROFILE_DIR%"=="" (
   echo Profile '%PROFILE_NAME%' not found.

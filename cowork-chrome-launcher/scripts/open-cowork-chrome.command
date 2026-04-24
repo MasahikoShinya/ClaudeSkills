@@ -23,10 +23,12 @@ fi
 PROFILE_DIR=$(/usr/bin/python3 - <<PYEOF
 import json
 try:
+    target = "$PROFILE_NAME".strip().lower()
     with open("$LOCAL_STATE") as f:
         data = json.load(f)
     for key, info in data.get("profile", {}).get("info_cache", {}).items():
-        if info.get("name") == "$PROFILE_NAME":
+        name = (info.get("name") or "").strip().lower()
+        if name == target:
             print(key)
             break
 except Exception:
