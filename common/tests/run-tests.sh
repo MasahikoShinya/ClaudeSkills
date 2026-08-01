@@ -513,6 +513,8 @@ test_deploy() {
   assert_contains "$(cat "$repo/AGENTS.md")" "AgentSkills Common Rules" "deploy adds AGENTS loader"
   assert_contains "$(cat "$repo/CLAUDE.md")" "AgentSkills Claude Rules" "deploy adds CLAUDE loader"
   [[ -f "$repo/SESSION_BRIEF.md" ]] && pass "deploy creates session brief" || fail "deploy creates session brief"
+  [[ -f "$repo/.agents/WORKING_MEMORY.md" ]] && pass "deploy creates local working memory" || fail "deploy creates local working memory"
+  git -C "$repo" check-ignore -q .agents/WORKING_MEMORY.md && pass "deploy excludes local working memory from Git status" || fail "deploy excludes local working memory from Git status"
   [[ -f "$repo/AGENT_MODELS.md" ]] && pass "deploy creates model template on request" || fail "deploy creates model template on request"
   assert_contains "$output" "[AgentSkills][DEPLOY][PASS] workflow-kit" "deploy reports completion"
 
@@ -657,9 +659,131 @@ test_workflow_resume_state() {
   assert_contains "$output" "started resolve" "discarded legacy resolve workflow state permits a new start"
 }
 
+test_resolve_reset() {
+  local repo output rc state_file initial_staged_file archive_state archive_initial_staged before_status before_staged before_unstaged after_status after_staged after_unstaged
+
+  repo="$(new_repo)"
+  printf 'staged before reset\n' >>"$repo/app.txt"
+  git -C "$repo" add app.txt
+  printf 'unstaged before reset\n' >>"$repo/app.txt"
+  before_status="$(git -C "$repo" status --short)"
+  before_staged="$(git -C "$repo" diff --cached --binary)"
+  before_unstaged="$(git -C "$repo" diff --binary)"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start resolve inspect "Identified resolve workflow request" 2>&1)"
+  assert_contains "$output" "started resolve" "identified resolve workflow state starts for reset"
+  state_file="$repo/.git/agentskills/workflows/resolve.state"
+  initial_staged_file="$repo/.git/agentskills/workflows/resolve.initial-staged"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset resolve 2>&1)"
+  assert_contains "$output" "Workflow: resolve" "reset displays workflow before archiving"
+  assert_contains "$output" "Original request: Identified resolve workflow request" "reset displays identified original request"
+  assert_contains "$output" "Next phase: inspect" "reset displays next phase"
+  assert_contains "$output" "Recorded at:" "reset displays recorded time"
+  assert_contains "$output" "app.txt" "reset displays initial staged paths"
+  assert_contains "$output" "State: .git/agentskills/workflows/resolve.state" "reset displays state path"
+  assert_contains "$output" "[AgentSkills][WORKFLOW-STATE][PASS] reset resolve workflow state" "identified resolve workflow state resets"
+  [[ ! -e "$state_file" && ! -e "$initial_staged_file" ]] && pass "reset removes active resolve state files" || fail "reset removes active resolve state files"
+  archive_state="$(find "$repo/.git/agentskills/workflows/archive" -name 'resolve-*.state' -type f -print -quit)"
+  [[ -n "$archive_state" ]] && pass "reset archives identified resolve state" || fail "reset archives identified resolve state"
+  grep -Fqx 'workflow=resolve' "$archive_state" && pass "reset archive preserves resolve state" || fail "reset archive preserves resolve state"
+  archive_initial_staged="$(find "$repo/.git/agentskills/workflows/archive" -name 'resolve-*.initial-staged' -type f -print -quit)"
+  [[ -n "$archive_initial_staged" ]] && pass "reset archives initial staged paths" || fail "reset archives initial staged paths"
+  grep -Fqx 'app.txt' "$archive_initial_staged" && pass "reset archive preserves initial staged paths" || fail "reset archive preserves initial staged paths"
+  after_status="$(git -C "$repo" status --short)"
+  after_staged="$(git -C "$repo" diff --cached --binary)"
+  after_unstaged="$(git -C "$repo" diff --binary)"
+  [[ "$before_status" == "$after_status" && "$before_staged" == "$after_staged" && "$before_unstaged" == "$after_unstaged" ]] && pass "reset preserves Git worktree and staged changes" || fail "reset preserves Git worktree and staged changes"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start resolve inspect "Replacement after reset" 2>&1)"
+  assert_contains "$output" "started resolve" "reset permits a new resolve workflow"
+
+  repo="$(new_repo)"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start resolve inspect "Legacy resolve workflow request" 2>&1)"
+  assert_contains "$output" "started resolve" "legacy resolve workflow state starts for reset"
+  state_file="$repo/.git/agentskills/workflows/resolve.state"
+  grep -v -e '^request_hash=' -e '^request_b64=' "$state_file" >"$state_file.legacy"
+  mv "$state_file.legacy" "$state_file"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset resolve 2>&1)"
+  assert_contains "$output" "Request identity: <missing (legacy state)>" "reset displays legacy request identity status"
+  assert_contains "$output" "reset resolve workflow state" "legacy resolve workflow state resets"
+  [[ ! -e "$state_file" ]] && pass "reset removes legacy resolve state" || fail "reset removes legacy resolve state"
+
+  repo="$(new_repo)"
+  set +e
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset resolve 2>&1)"
+  rc=$?
+  set -e
+  [[ "$rc" == "1" ]] && pass "reset without state is a blocker" || fail "reset without state is a blocker"
+  assert_contains "$output" "No resolve workflow state to reset" "reset without state explains no target"
+  set +e
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset resolve --step 2>&1)"
+  rc=$?
+  set -e
+  [[ "$rc" == "2" ]] && pass "reset rejects step combination" || fail "reset rejects step combination"
+  set +e
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset resolve "unexpected request" 2>&1)"
+  rc=$?
+  set -e
+  [[ "$rc" == "2" ]] && pass "reset rejects request text" || fail "reset rejects request text"
+
+  repo="$(new_repo)"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start sdd_tdd spec "SDD workflow request" 2>&1)"
+  assert_contains "$output" "started sdd_tdd" "SDD workflow state starts before rejected reset"
+  set +e
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh reset sdd_tdd 2>&1)"
+  rc=$?
+  set -e
+  [[ "$rc" == "2" ]] && pass "reset does not affect SDD workflow state" || fail "reset does not affect SDD workflow state"
+  [[ -f "$repo/.git/agentskills/workflows/sdd_tdd.state" ]] && pass "rejected SDD reset preserves SDD state" || fail "rejected SDD reset preserves SDD state"
+}
+
+test_additional_workflow_commands() {
+  local repo output rc checkpoint_dir
+
+  repo="$(new_repo)"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start resolve inspect "Resume request" 2>&1)"
+  assert_contains "$output" "started resolve" "resume test workflow starts"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh resume resolve 2>&1)"
+  assert_contains "$output" "Original request: Resume request" "resume restores original request"
+  assert_contains "$output" "Next phase: inspect" "resume restores next phase"
+  output="$(cd "$repo" && bash common/workflows/status.sh 2>&1)"
+  assert_contains "$output" "Workflow: resolve" "status displays workflow"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh abort resolve 2>&1)"
+  assert_contains "$output" "abort resolve workflow state" "abort archives resolve state"
+  [[ ! -e "$repo/.git/agentskills/workflows/resolve.state" ]] && pass "abort removes active workflow state" || fail "abort removes active workflow state"
+
+  printf 'checkpoint change\n' >>"$repo/app.txt"
+  git -C "$repo" add app.txt
+  output="$(cd "$repo" && bash common/workflows/checkpoint.sh before-publish 2>&1)"
+  assert_contains "$output" "checkpoint created" "checkpoint reports success"
+  checkpoint_dir="$(awk -F': ' '/^Checkpoint:/ { print $2 }' <<<"$output")"
+  [[ "$checkpoint_dir" != /* ]] && checkpoint_dir="$repo/$checkpoint_dir"
+  [[ -f "$checkpoint_dir/status.txt" && -f "$checkpoint_dir/staged.diff" ]] && pass "checkpoint captures Git state" || fail "checkpoint captures Git state"
+
+  output="$(cd "$repo" && bash common/workflows/publish-state.sh record 77 https://github.com/example/repo/pull/77 2>&1)"
+  assert_contains "$output" "recorded PR #77" "publish state records PR"
+  output="$(cd "$repo" && bash common/workflows/publish-state.sh show 2>&1)"
+  assert_contains "$output" "number=77" "publish state displays recorded PR"
+  make_fake_gh "$repo"
+  output="$(cd "$repo" && PATH="$repo/fake-bin:$ORIGINAL_PATH" common/reviewers/inspect-pull-request.sh 2>&1)"
+  assert_contains "$output" "Using PR #77 recorded by ::publish" "PR inspection prefers recorded publish PR"
+
+  repo="$(new_repo)"
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh start resolve inspect "Legacy resume request" 2>&1)"
+  state_file="$repo/.git/agentskills/workflows/resolve.state"
+  grep -v '^request_b64=' "$state_file" >"$state_file.legacy"
+  mv "$state_file.legacy" "$state_file"
+  set +e
+  output="$(cd "$repo" && bash common/workflows/workflow-state.sh resume resolve 2>&1)"
+  rc=$?
+  set -e
+  [[ "$rc" == "1" ]] && pass "resume blocks state without stored request text" || fail "resume blocks state without stored request text"
+  assert_contains "$output" "cannot resume without stored request text" "resume explains legacy blocker"
+}
+
 test_workflow_command_routes() {
-  local rules resolve_prompt sdd_prompt test_plan_prompt route command prompt expected command_syntax
+  local rules help readme resolve_prompt sdd_prompt test_plan_prompt route command prompt expected command_syntax
   rules="$(cat "$SOURCE_COMMON/rules/AGENTS.base.md")"
+  help="$(cat "$SOURCE_COMMON/prompts/workflow-help.md")"
+  readme="$(cat "$SOURCE_COMMON/README.md")"
   for route in 'resolve:resolve.md' 'sdd_tdd:sdd_tdd.md' 'ui-mock:ui-mock.md' 'test-plan:test-plan.md'; do
     command="${route%%:*}"
     prompt="${route#*:}"
@@ -669,13 +793,35 @@ test_workflow_command_routes() {
     expected="| \`$command_syntax\` | \`.agentskills/prompts/$prompt\`"
     assert_contains "$rules" "$expected" "rules route $command to its prompt"
   done
+  for prompt in status ask resume abort handoff inspect reproduce verify plan scope checkpoint publish sound; do
+    [[ -f "$SOURCE_COMMON/prompts/$prompt.md" ]] && pass "$prompt prompt file exists" || fail "$prompt prompt file exists"
+  done
   resolve_prompt="$(cat "$SOURCE_COMMON/prompts/resolve.md")"
   assert_contains "$resolve_prompt" '`::resolve <request>` is the default continuous mode' "resolve command defaults to continuous mode"
   assert_contains "$resolve_prompt" 'It does not create or update `SESSION_BRIEF.md` solely for this command' "resolve continuous mode preserves session brief ownership"
   assert_contains "$resolve_prompt" 'it never commits, pushes, or merges' "resolve continuous mode does not publish changes"
   assert_contains "$resolve_prompt" 'An individual gate check may emit `WARNING` for information' "resolve continuous mode distinguishes check warnings from final gate status"
   assert_contains "$resolve_prompt" '`::resolve --step <request>`' "resolve command defines step mode"
-  assert_contains "$rules" '`::resolve [--step] <request>`' "rules expose the optional resolve step mode"
+  assert_contains "$resolve_prompt" '`::resolve --reset` is the dedicated state-reset operation' "resolve prompt defines reset mode"
+  assert_contains "$rules" '| `::resolve --reset` | `.agentskills/prompts/resolve.md` |' "rules expose resolve reset mode"
+  assert_contains "$rules" '| `::publish [--loop]` | `.agentskills/prompts/publish.md` |' "rules expose publish mode"
+  publish_prompt="$(cat "$SOURCE_COMMON/prompts/publish.md")"
+  assert_contains "$publish_prompt" 'The original `::publish` invocation authorizes this publish operation' "publish does not require a second confirmation"
+  assert_not_contains "$publish_prompt" 'Request explicit user confirmation' "publish removes the confirmation wait"
+  assert_contains "$publish_prompt" '`::publish --loop`' "publish defines review loop mode"
+  assert_contains "$publish_prompt" 'Repeat at most three remediation cycles' "publish review loop is bounded"
+  assert_contains "$publish_prompt" 'do not create a second PR' "publish reuses the existing PR"
+  assert_contains "$rules" '| `::ask <question>` | `.agentskills/prompts/ask.md` |' "rules expose ask mode"
+  assert_contains "$rules" '| `::sound [<name>|--list]` | `.agentskills/prompts/sound.md` |' "rules expose sound mode"
+  assert_contains "$help" '省略=全音を順に試聴。名前=通知音変更、--list=一覧' "help explains sound command options"
+  assert_contains "$readme" '`::sound Ring02`' "README documents sound selection"
+  assert_contains "$help" '::reproduce <不具合>' "help explains reproduce command"
+  assert_contains "$help" '::ask <質問>' "help explains ask command"
+  assert_contains "$help" '::publish --loop' "help explains publish review loop"
+  assert_contains "$readme" '`::ask <質問>`は回答専用です。' "README documents ask command"
+  assert_contains "$help" '条件・原因・期待動作が明確な修正  → ::resolve' "help explains reproduce and resolve selection"
+  assert_contains "$help" '新機能・設計が未確定       → ::plan → （採用）→ ::sdd_tdd' "help defines the standard feature workflow"
+  assert_contains "$readme" 'verifyは「動作が正しいか」、scopeは「変更範囲が正しいか」' "README distinguishes verify and scope"
   sdd_prompt="$(cat "$SOURCE_COMMON/prompts/sdd_tdd.md")"
   assert_contains "$sdd_prompt" 'required SDD specification artifact' "SDD and TDD command records its specification artifact"
   assert_contains "$sdd_prompt" 'Do not implement without the required SDD specification artifact and test evidence.' "SDD and TDD command requires test evidence before implementation"
@@ -715,6 +861,8 @@ test_setup_conflict_and_force
 test_deploy
 test_pseudo_command_execution_marker
 test_workflow_resume_state
+test_resolve_reset
+test_additional_workflow_commands
 test_workflow_command_routes
 
 if ((FAIL_COUNT > 0)); then

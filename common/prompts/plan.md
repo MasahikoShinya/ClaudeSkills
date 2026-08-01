@@ -1,0 +1,3 @@
+# Plan
+
+Report `[AgentSkills][PROMPT][START] ::plan` after reading this file. Use `::plan <request>` in Expansion mode before implementation. Inspect only the request, relevant files, existing tests, and repository conventions. Write a draft at `docs/plans/<slug>.md` containing purpose, current context, proposed behavior, scope and non-scope, alternatives, risks, implementation outline, verification, and unresolved decisions. Do not create an external task, edit application source or production tests, stage, commit, push, create a PR, or modify Git configuration. The plan is not adopted until the user confirms it; then use `::sdd_tdd` for implementation. End with `PROMPT END`.

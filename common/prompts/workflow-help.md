@@ -11,6 +11,21 @@ Display the following compact help exactly enough to identify each entry point. 
 疑似コマンド
   ::resolve <依頼>              レビュー指摘・不具合を連続で最小修正。仕様書は強制しない
   ::resolve --step <依頼>       resolveを1 Phaseだけ実行して停止
+  ::resolve --reset             resolveの未完了stateを表示後、ローカル監査archiveへ退避
+  ::status                      workflow・Git状態・直前publishのPRを表示
+  ::ask <質問>                  質問だけに回答。調査はしても、変更・計画・タスク化はしない
+  ::resume                      唯一の未完了workflowを依頼文なしで再開
+  ::abort                       唯一のworkflow stateを表示後、ローカルarchiveへ退避
+  ::handoff                     次回用の要約と次の一手をWORKING_MEMORYへ記録
+  ::inspect <対象>              修正せず、コード・設定・テスト・ログを根拠付きで調査
+  ::reproduce <不具合>          修正せず、再現条件とfailing testを証拠として作る
+  ::verify <対象>               対象に適したtest・lint・buildを実行。変更しない
+  ::plan <依頼>                 実装せず、仕様・方針・リスク・検証をdocs/plans/へ下書き
+  ::scope                       BriefとGit差分を照合し、対象外・混在変更を検出
+  ::checkpoint <名前>           Git状態・差分・workflowをローカルにスナップショット
+  ::publish                     commit、push、draft PR作成を一括実行。mergeしない
+  ::publish --loop              PR reviewがOKになるまで、最大3回の修正・再公開・再review
+  ::sound [名前|--list]         省略=全音を順に試聴。名前=通知音変更、--list=一覧
   ::sdd_tdd <依頼>              SESSION_BRIEF仕様 -> 失敗テスト -> 実装 -> レビュー -> ゲート
   ::sdd_tdd --step <依頼>       sdd_tddを1 Phaseだけ実行して停止
   ::ui-mock       静的HTMLのUIモックを docs/ui-mocks/ に作成
@@ -40,6 +55,26 @@ review policy: auto は収束フローの SELF-REVIEW を使う。independent �
 Codexセッション内でSELF-REVIEWがなければ、子Codexを起動せず即時BLOCKERになる。
 既定: ::sdd_tdd / ::resolve は連続モード。仕様・対象が明確ならGateまで進める。曖昧さ、既存差分混在、検証不足、最終review WARNING/BLOCKER、最終GATE/HOOK BLOCKER/FAIL、高リスク操作では停止する。個別checkのWARNINGは最終GATE/HOOKがPASSなら表示のみ。commitはしない。
 --step: 現在の1 Phaseだけを実行して停止する。次回の通常コマンドは、整合する未完了workflow stateがあれば記録済みの次Phaseから連続実行する。stateまたはSESSION_BRIEFの整合性がない場合は停止する。
+使い分け:
+  条件・原因・期待動作が明確な修正  → ::resolve（最小修正→検証・review・gate）
+  条件・原因・期待動作のどれかが不明 → ::reproduce → ::resolve（再現証拠を固めてから修正）
+  修正せずに原因候補や影響範囲を知る → ::inspect（事実と仮説を分けて調査）
+  質問への回答だけが欲しい          → ::ask（必要な読み取り・検索のみ。変更しない）
+  実装前に方針と範囲を固める        → ::plan（下書きのみ。タスク作成・実装はしない）
+  変更後に動作・品質を確認する        → ::verify（test等を実行。差分範囲は判定しない）
+  commit/PR前に差分の範囲を確認する   → ::scope（対象外・混在・未stage変更を検出）
+  後で比較・参照する節目を残す        → ::checkpoint（Git状態・差分・workflowを保存）
+  次の担当・次回へ作業を渡す          → ::handoff（Working Memoryに現在地と次の一手を整理）
+  検証済み変更を公開用draft PRにする  → ::publish（commit・push・draft PR作成）
+  修正からPR review完了まで連続実行    → ::publish --loop（最大3回。曖昧・高リスクなら停止）
+  Codex通知音を確認・変更する        → ::sound（試聴。名前指定で変更、--listで一覧）
+
+通常フロー:
+  新機能・設計が未確定       → ::plan → （採用）→ ::sdd_tdd → ::scope → ::publish → ::pr-review
+  明確な不具合・レビュー指摘 → ::resolve → ::scope → ::publish → ::pr-review
+  条件や原因が不明な不具合   → ::inspect / ::reproduce → ::resolve → ::scope → ::publish
+  作業を中断・再開する       → ::checkpoint / ::handoff → ::status → ::resume
+  未完了workflowをやめる     → ::abort（resolveだけを破棄するなら ::resolve --reset）
 EXECUTED がなければ疑似コマンドの実行は未確認です。失敗とは断定しません。
 [AgentSkills][HELP][PASS]
 [AgentSkills][PROMPT][END] ::help

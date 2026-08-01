@@ -126,13 +126,6 @@ if ! agentskills_require_hash_command; then
   echo "Reason: sha256sum, shasum, or openssl is required." >&2
   exit 3
 fi
-if [[ ! -f "$BRIEF" ]]; then
-  echo "[AgentSkills][LLM-REVIEW][BLOCKER] SESSION_BRIEF.md not found" >&2
-  echo "Reason: The reviewer cannot determine confirmed purpose and scope." >&2
-  echo "Resolution:" >&2
-  echo "  cp \"$KIT_ROOT/briefs/SESSION_BRIEF.template.md\" SESSION_BRIEF.md" >&2
-  exit 2
-fi
 if git diff --cached --quiet --exit-code; then
   echo "[AgentSkills][LLM-REVIEW][SKIP] staged-diff"
   echo "Reason: No staged diff."

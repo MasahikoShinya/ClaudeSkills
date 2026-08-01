@@ -8,7 +8,7 @@ Skillの自動発動には依存しません。共通基盤はMarkdown、shell s
 
 | Trigger | 起動する処理 |
 |---|---|
-| 自動駆動 | `AGENTS.md`／`CLAUDE.md`、Mode Selector、SESSION_BRIEF、標準収束フロー |
+| 自動駆動 | `AGENTS.md`／`CLAUDE.md`、Mode Selector、WORKING_MEMORY、SESSION_BRIEF、標準収束フロー |
 | ユーザー指示 | `::resolve`、`::sdd_tdd`、`::ui-mock`、`::test-plan`、`::diff-review`、`::subagent-review`、`::pr-review`、`::failure-analysis`、`::gate`、`::help` |
 | ローカルGit Hook | pre-commitの機械gateとCodex review、pre-pushの保護ブランチ検査 |
 | GitHubイベント | 将来対応。v0.1では実装しない |
@@ -21,7 +21,7 @@ rules、prompts、brief、script、subagentはTriggerではなく、Triggerか�
 |---|---|
 | `rules/` | プロジェクトの`AGENTS.md`／`CLAUDE.md`へ統合する基本ルール |
 | `prompts/` | 収束、review、failure analysisの定型手順 |
-| `briefs/` | SESSION_BRIEFテンプレート |
+| `briefs/` | SESSION_BRIEF／WORKING_MEMORYテンプレート |
 | `config/` | 任意のモデル設定テンプレート |
 | `gates/` | 機密、サイズ、空白、diff、LLM reviewの検査 |
 | `lib/` | staged path解析、リスク判定、SHA-256、review cacheの共通処理 |
@@ -42,7 +42,7 @@ cd /path/to/AgentSkills
 bash common/setup/deploy.sh --claude --models /path/to/target-project
 ```
 
-この1回の実行で、`.agentskills`へのsymlink、`AGENTS.md`の管理ブロック、`CLAUDE.md`の管理ブロック、未作成の`SESSION_BRIEF.md`、未作成の`AGENT_MODELS.md`を用意します。Git Hookは任意導入のため、必要な場合だけ追加します。
+この1回の実行で、`.agentskills`へのsymlink、`AGENTS.md`の管理ブロック、`CLAUDE.md`の管理ブロック、未作成の`SESSION_BRIEF.md`、ローカル専用の`.agents/WORKING_MEMORY.md`、未作成の`AGENT_MODELS.md`を用意します。`WORKING_MEMORY.md`は`.git/info/exclude`へ登録されるため、Gitの差分・レビュー・commit対象にはなりません。Git Hookは任意導入のため、必要な場合だけ追加します。
 
 ```bash
 bash common/setup/deploy.sh --claude --models --install-hooks /path/to/target-project
@@ -76,13 +76,23 @@ AGENT_MODELS.md
 
 1. `rules/AGENTS.base.md`をプロジェクトルートの`AGENTS.md`へ統合します。
 2. Claude Codeを使う場合は`rules/CLAUDE.base.md`もルート`CLAUDE.md`へ統合します。
-3. Session Briefを作成します。
+3. 通常タスク用のローカル短期記憶を作成します。
+
+```bash
+mkdir -p .agents
+cp .agentskills/briefs/WORKING_MEMORY.template.md .agents/WORKING_MEMORY.md
+printf '\n/.agents/WORKING_MEMORY.md\n' >> .git/info/exclude
+```
+
+通常のプロジェクト調査・計画・変更では、エージェントがこのファイルを読んで、継続に有用な確定事項・制約・次の作業だけを簡潔に更新します。これは仕様・承認・レビューの根拠ではなく、ユーザー指示と現在のファイルが常に優先されます。会話だけの依頼には使いません。
+
+4. 収束フロー用のSession Briefを作成します。
 
 ```bash
 cp .agentskills/briefs/SESSION_BRIEF.template.md SESSION_BRIEF.md
 ```
 
-4. 必要ならモデル設定を作成します。
+5. 必要ならモデル設定を作成します。
 
 ```bash
 cp .agentskills/config/AGENT_MODELS.template.md AGENT_MODELS.md
@@ -90,11 +100,28 @@ cp .agentskills/config/AGENT_MODELS.template.md AGENT_MODELS.md
 
 `AGENT_MODELS.md`がない場合、または値が`auto`の場合はruntimeのデフォルトモデルを使います。
 
+`SESSION_BRIEF.md`は確定仕様を固定する収束フロー専用です。`::sdd_tdd`では必須の仕様・レビュー根拠になり、`::resolve`では既存Briefが対象に適用できる場合だけ参照します。通常タスクの継続メモには`.agents/WORKING_MEMORY.md`を使うため、未確定の考えや途中経過でBriefを汚しません。
+
 ## 擬似コマンド
 
 ```text
 ::resolve <確定した依頼>
 ::resolve --step <確定した依頼>
+::resolve --reset
+::status
+::ask <質問>
+::resume
+::abort
+::handoff
+::inspect <対象>
+::reproduce <不具合>
+::verify <対象>
+::plan <依頼>
+::scope
+::checkpoint <名前>
+::publish
+::publish --loop
+::sound [<名前>|--list]
 ::sdd_tdd <確定した依頼>
 ::sdd_tdd --step <確定した依頼>
 ::ui-mock
@@ -113,7 +140,25 @@ cp .agentskills/config/AGENT_MODELS.template.md AGENT_MODELS.md
 
 `::sdd_tdd`は、期待動作・対象・非対象が明確な場合にSpecからGateまでを連続して実行します。commit、push、mergeはしません。仕様の曖昧さ、既存差分の混在、test証跡の不足、最終reviewの`WARNING` / `BLOCKER`、最終GATE/HOOKの`BLOCKER` / `FAIL`、security・外部公開・不可逆操作では停止し、失敗時は原因分析だけを行います。個別gate checkの`WARNING`は、最終GATE/HOOKが`PASS`なら表示のみで連続実行を止めません。
 
-`::resolve --step` と `::sdd_tdd --step` は現在の1 Phaseだけを実行して停止します。通常コマンドは、同じ依頼本文と整合する未完了 state があれば記録済みの次Phaseから自動再開します。stateは `.git/agentskills/workflows/` に保存され、依頼本文、開始時のstaged files、`SESSION_BRIEF.md`のhashを確認します。stateがない、または前回 state が完了済みなら新規開始し、異なる依頼またはbriefが変更されている場合は停止します。旧kitが作成したrequest identityのない state は自動再開せず、表示される `discard-legacy` command で確認後にだけ破棄できます。
+`::resolve --step` と `::sdd_tdd --step` は現在の1 Phaseだけを実行して停止します。通常コマンドは、同じ依頼本文と整合する未完了 state があれば記録済みの次Phaseから自動再開します。stateは `.git/agentskills/workflows/` に保存され、依頼本文、開始時のstaged files、`SESSION_BRIEF.md`のhashを確認します。stateがない、または前回 state が完了済みなら新規開始し、異なる依頼またはbriefが変更されている場合は停止します。旧kitが作成したrequest identityのない state は従来どおり表示される `discard-legacy` command で破棄できます。
+
+異なる依頼の未完了`resolve` stateを明示的に破棄するには、依頼文を付けずに `::resolve --reset` を使います。実行前にworkflow、保存済みのrequest identity、next phase、記録日時、開始時のstage対象、state pathを表示し、`resolve.state`と`resolve.initial-staged`だけを`.git/agentskills/workflows/archive/resolve-<timestamp>.*`へ退避します。ソース、作業ツリー、stage、commit、branch、PR、Git設定は変更しません。stateがない場合、`--step`との併用、または依頼文を付けた呼び出しは`BLOCKER`です。
+
+`::status`はworkflow・Git状態・直前publishのPRを読み取り専用で表示します。`::resume`は唯一の未完了workflowを保存済み依頼で再開し、`::abort`は唯一のworkflow stateだけを表示後にローカルarchiveへ退避します。`::handoff`は次回の目的・確認済み事項・未解決点・次の一手をWorking Memoryへ整理します。`::checkpoint <名前>`は差分・Git状態・brief・workflowを`.git/agentskills/checkpoints/`へ保存します。
+
+`::resolve`は条件・原因・期待動作が明確な修正に使います。どれかが不明なら、`::reproduce <不具合>`で再現条件と最小failing testを残してから`::resolve`へ進みます。`::inspect <対象>`は修正せずに原因候補・影響範囲を調べる操作です。`::plan <依頼>`は`docs/plans/`に下書きを作るだけで、外部タスクや実装は開始しません。
+
+`::verify <対象>`は変更後の動作・品質を確認するためにtest・lint・typecheck・buildを実行します。`::scope`はcommitやPRの前に、BriefとGit差分を照合して対象外・混在・未stageの変更を検出します。つまりverifyは「動作が正しいか」、scopeは「変更範囲が正しいか」です。`::checkpoint`は比較用の節目を保存し、`::handoff`は次回や別担当が再開できるように現在地と次の一手を整理します。
+
+`::publish`は、scope・検証・review・gateの証拠を確認してから、対象path、commit message、push先、draft PRタイトルを表示し、commit、push、draft PR作成を一括実行します。`::publish`の呼び出し自体がこの操作の許可であり、会話での再確認は求めません。既存の同一ブランチPRがあれば再利用し、mergeはしません。作成または再利用したPRはローカル記録されるため、引数なしの`::pr-review`はそのPRを最優先で選びます。
+
+`::publish --loop`は、公開後にPR reviewを実行し、根拠が明確で限定された指摘だけを`::resolve`で修正して、同じPRへ再公開・再reviewします。PR reviewが`OK`になるまで、最大3回の修正サイクルを連続実行します。曖昧・対象外・高リスク・繰り返し・新規の無関係な指摘、またはcheck・検証・review・gateの失敗では停止します。merge、draft解除、PRコメント、同一ブランチの2本目のPR作成は行いません。
+
+`::sound`はWindows標準WAVを名前順に試聴します。`::sound --list`は一覧だけを表示し、`::sound Ring02`はグローバルなCodex通知音を変更します。従来の`::sound --set Ring02`も使えます。リポジトリやGit状態は変更しません。
+
+`::ask <質問>`は回答専用です。答えに必要なファイル、Git状態、ログ、設定、公式情報は読み取れますが、実装、計画作成、タスク化、設定変更、Git操作、外部サービスへの変更は行いません。
+
+通常フローは、未確定の新機能なら`::plan`→採用→`::sdd_tdd`→`::scope`→`::publish`→`::pr-review`です。明確な不具合・レビュー指摘なら`::resolve`から始め、条件や原因が不明なら`::inspect`または`::reproduce`で証拠を固めてから`::resolve`へ進みます。作業を中断する前に`::checkpoint`または`::handoff`を使い、次回は`::status`→`::resume`で再開します。
 
 `::ui-mock`は`docs/ui-mocks/<slug>.html`に静的HTMLのUI仕様モックを作ります。`::test-plan`は利用可能で実行可能な`test-orchestrator`の計画フェーズを優先し、使えないCodex環境では同じ受け入れ条件とテスト計画を`docs/test-plans/<slug>.md`へ直接作成します。両方ともExpansion用の下書きであり、採用後に`::sdd_tdd`へ渡します。
 

@@ -1,0 +1,3 @@
+# Resume
+
+Report `[AgentSkills][PROMPT][START] ::resume` after reading this file. Inspect `bash .agentskills/workflows/status.sh`. If exactly one unfinished `resolve` or `sdd_tdd` workflow exists, run `bash .agentskills/workflows/workflow-state.sh resume <workflow>` and continue only at its reported phase using the recovered original request. If no workflow or more than one unfinished workflow exists, report `PROMPT BLOCKER`; do not guess. Existing state without stored request text is also a `BLOCKER`. Do not change Git state solely to resume. End with `PROMPT END` only after the recorded phase procedure completes.
