@@ -17,6 +17,16 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 pr_ref="${1:-}"
+if [[ -z "$pr_ref" ]]; then
+  publish_state="$(git rev-parse --git-path agentskills/publish/latest-pr)"
+  if [[ -f "$publish_state" ]]; then
+    published_number="$(awk -F= '$1 == "number" { print $2; exit }' "$publish_state")"
+    if [[ "$published_number" =~ ^[0-9]+$ ]]; then
+      pr_ref="$published_number"
+      echo "[AgentSkills][PR-REVIEW][INFO] Using PR #$published_number recorded by ::publish"
+    fi
+  fi
+fi
 view_args=(pr view)
 [[ -n "$pr_ref" ]] && view_args+=("$pr_ref")
 view_args+=(--json number,url,title,state,isDraft,baseRefName,headRefName,mergeable,mergeStateStatus,reviewDecision)
@@ -26,10 +36,20 @@ metadata="$(gh "${view_args[@]}" 2>&1)"
 metadata_rc=$?
 set -e
 if ((metadata_rc != 0)); then
-  echo "[AgentSkills][PR-REVIEW][BLOCKER] PR metadata unavailable" >&2
-  echo "Reason: $metadata" >&2
-  echo "Resolution: Authenticate gh with 'gh auth login', verify repository access, and confirm the PR number or URL." >&2
-  exit 2
+  if [[ -z "$pr_ref" ]]; then
+    fallback_ref="$(gh pr list --author @me --state open --limit 1 --json number --jq '.[0].number' 2>/dev/null || true)"
+    if [[ "$fallback_ref" =~ ^[0-9]+$ ]]; then
+      echo "[AgentSkills][PR-REVIEW][INFO] Using your most recently updated open PR #$fallback_ref"
+      metadata="$(gh pr view "$fallback_ref" --json number,url,title,state,isDraft,baseRefName,headRefName,mergeable,mergeStateStatus,reviewDecision 2>&1)" || true
+      pr_ref="$fallback_ref"
+    fi
+  fi
+  if [[ -z "$metadata" || "$metadata" != \{* ]]; then
+    echo "[AgentSkills][PR-REVIEW][BLOCKER] PR metadata unavailable" >&2
+    echo "Reason: $metadata" >&2
+    echo "Resolution: Authenticate gh with 'gh auth login', verify repository access, and confirm the PR number or URL." >&2
+    exit 2
+  fi
 fi
 number="$(jq -r '.number' <<<"$metadata")"
 url="$(jq -r '.url' <<<"$metadata")"

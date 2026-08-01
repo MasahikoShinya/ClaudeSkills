@@ -9,7 +9,7 @@ Source: .agentskills/prompts/pr-review.md
 
 Review only. Do not modify code, tests, staging, Git configuration, the PR, or its merge state.
 
-Accept one optional argument: a GitHub PR number or URL. When it is omitted, inspect the PR associated with the current branch. First run:
+Accept one optional argument: a GitHub PR number or URL. An explicit argument always wins. When omitted, inspect the PR recorded by the latest `::publish`; if none is recorded, use the PR associated with the current branch; if that is unavailable, use the current user's most recently updated open PR. If no PR can be selected, report `PROMPT BLOCKER`. First run:
 
 ```bash
 .agentskills/reviewers/inspect-pull-request.sh [<PR-number-or-URL>]

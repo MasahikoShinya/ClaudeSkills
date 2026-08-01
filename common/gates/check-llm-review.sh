@@ -14,13 +14,6 @@ if git diff --cached --quiet --exit-code; then
   echo "Reason: No staged diff."
   exit 0
 fi
-if [[ ! -f SESSION_BRIEF.md ]]; then
-  echo "[AgentSkills][CHECK][BLOCKER] llm-review" >&2
-  echo "Reason: SESSION_BRIEF.md is required for scoped review." >&2
-  echo "Resolution:" >&2
-  echo "  cp \"$KIT_ROOT/briefs/SESSION_BRIEF.template.md\" SESSION_BRIEF.md" >&2
-  exit 1
-fi
 if ! agentskills_require_hash_command; then
   echo "[AgentSkills][CHECK][FAIL] llm-review" >&2
   echo "Reason: sha256sum, shasum, or openssl is required." >&2

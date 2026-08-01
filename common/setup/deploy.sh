@@ -168,6 +168,25 @@ else
   echo "Action: Fill only confirmed scope and verification before Convergence work."
 fi
 
+working_memory_dir="$TARGET_ROOT/.agents"
+working_memory_path="$working_memory_dir/WORKING_MEMORY.md"
+if [[ -e "$working_memory_path" ]]; then
+  echo "[AgentSkills][DEPLOY][SKIP] .agents/WORKING_MEMORY.md already exists"
+else
+  mkdir -p "$working_memory_dir"
+  cp "$KIT_ROOT/briefs/WORKING_MEMORY.template.md" "$working_memory_path"
+  echo "[AgentSkills][DEPLOY][PASS] .agents/WORKING_MEMORY.md created"
+fi
+
+local_exclude="$TARGET_ROOT/.git/info/exclude"
+working_memory_exclude='/.agents/WORKING_MEMORY.md'
+if [[ -f "$local_exclude" ]] && grep -Fqx "$working_memory_exclude" "$local_exclude"; then
+  echo "[AgentSkills][DEPLOY][SKIP] local exclude already covers .agents/WORKING_MEMORY.md"
+else
+  printf '\n# AgentSkills local working memory\n%s\n' "$working_memory_exclude" >>"$local_exclude"
+  echo "[AgentSkills][DEPLOY][PASS] .agents/WORKING_MEMORY.md excluded from Git status"
+fi
+
 if ((create_models == 1)); then
   if [[ -e "$TARGET_ROOT/AGENT_MODELS.md" ]]; then
     echo "[AgentSkills][DEPLOY][SKIP] AGENT_MODELS.md already exists"

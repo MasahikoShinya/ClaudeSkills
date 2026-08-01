@@ -1,0 +1,3 @@
+# Reproduce
+
+Report `[AgentSkills][PROMPT][START] ::reproduce` after reading this file. Use `::reproduce <defect>` when conditions, cause, or expected behavior are not yet sufficiently clear for `::resolve`. Record reproduction conditions, steps, expected and actual results, evidence, and relevant logs. First use an existing test when possible; otherwise add the smallest focused failing regression test and keep it as the defect evidence. Do not change production code, alter existing test expectations, stage, commit, push, create a PR, or change Git configuration. If reproduction is unavailable, report the missing observation and next data to collect. End with `PROMPT END` with the evidence and the handoff to `::resolve` when the correction is bounded.

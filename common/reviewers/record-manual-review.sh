@@ -37,10 +37,6 @@ fi
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
-if [[ ! -f SESSION_BRIEF.md ]]; then
-  echo "[AgentSkills][MANUAL-REVIEW][BLOCKER] SESSION_BRIEF.md not found" >&2
-  exit 2
-fi
 if git diff --cached --quiet --exit-code; then
   echo "[AgentSkills][MANUAL-REVIEW][BLOCKER] No staged diff" >&2
   exit 2
